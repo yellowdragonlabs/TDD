@@ -1,0 +1,17 @@
+#!/bin/bash
+
+trap 'exit' INT
+
+COMPILE="clang++ -std=c++20 -o t"
+
+if [ "$1" == "-R" ]; then
+	shift 1
+	time_prog=$(which time)
+	>&2 echo -ne "\ncompiling..."
+	$time_prog -f "%E" $COMPILE ${@:-*cpp} && $time_prog -f "%Es (%Mkb)" ./t
+else
+	[ -x "$(command -v entr)" ] || { >&2 echo "Please install entr (https://github.com/eradman/entr)."; exit; }
+	while true; do
+		find ../ | entr -nd ./run -R $@
+	done
+fi
