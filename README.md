@@ -263,6 +263,7 @@ Note
 
 - Test names must be unique across all translation units.
 - `RUN_ALL()` must be the last statement.
+- Tests within the same category and translation unit are executed in the order in which they are declared.
 - All test code runs within static initialization. Care must be taken to avoid the [Static Initialization Order Fiasco](https://en.cppreference.com/w/cpp/language/siof). [`sample.cpp`](https://codeberg.org/yellowdragon/tdd/raw/branch/master/sample.cpp) illustrates how to initialize before TDD.
 - Defining `TDD_INIT_IOS` is a quick way to include iostream and initialize `std::ios_base`. Otherwise, using `std::cout` and similar may segfault.
 - Define `TDD_MAX_ERRORS` to limit the maximum number of errors.
