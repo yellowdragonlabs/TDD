@@ -12,7 +12,7 @@ See while you code. TDD is a zero dependency test system that is 23x faster than
 
 Despite the name, TDD is not specifically intended for "test driven development" but serves all testing purposes.
 
-Tested with GCC and Clang.
+Tested with GCC and Clang (requires Clang 15 or above).
 
 
 Index
@@ -267,10 +267,11 @@ Note
 - All test code runs within static initialization. Care must be taken to avoid the [Static Initialization Order Fiasco](https://en.cppreference.com/w/cpp/language/siof). [`sample.cpp`](https://codeberg.org/yellowdragon/tdd/raw/branch/master/sample.cpp) illustrates how to initialize before TDD.
 - Defining `TDD_INIT_IOS` is a quick way to include iostream and initialize `std::ios_base`. Otherwise, using `std::cout` and similar may segfault.
 - Define `TDD_MAX_ERRORS` to limit the maximum number of errors.
+- Functions accessed with `prv()` do not have default arguments.
 - [An old C++ standard issue](https://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#2118) says friend injection should be made ill-formed, but that it is "as yet undetermined" how to prohibit this.
 	There is no reason for this, and I do not see how it could be accomplished without breaking a ton of C++ code. Friend functions and CRTP'd friends are everywhere.
 - GCC warns about undefined inline functions. We await the [option to supress this](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66918).
-- Functions accessed with `prv()` do not have default arguments.
+- Clang had an issue that produces "is not a constant expression" errors. Updating to Clang 15 fixes this.
 - TDD is thread-safe.
 
 
