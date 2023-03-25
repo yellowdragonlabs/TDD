@@ -12,7 +12,7 @@ See while you code. TDD is a zero dependency test system that is 23x faster than
 
 Despite the name, TDD is not specifically intended for "test driven development" but serves all testing purposes.
 
-Tested with GCC and Clang (requires Clang 15 or above).
+Tested with GCC and Clang (15 or above).
 
 
 Index
