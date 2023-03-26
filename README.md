@@ -36,7 +36,7 @@ Quick Start
 1. Download `tdd.h` and `tdd.cpp` into your test directory.
 
 	```
-	wget https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/README.mdi https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/tdd.h https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/tdd.cpp
+	wget https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/tdd.h https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/tdd.cpp
 	```
 2. Create a cpp:
 
