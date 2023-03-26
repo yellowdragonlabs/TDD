@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/tdd.png">
+<img src="https://codeberg.org/yellowdragon/pages/raw/branch/master/tdd.png">
 
 TDD: Testing in pristine C++
 ============================
