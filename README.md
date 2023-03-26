@@ -1,4 +1,4 @@
-<img src="https://codeberg.org/yellowdragon/pages/raw/branch/master/tdd.png">
+<img src="https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/tdd.png">
 
 TDD: Testing in pristine C++
 ============================
@@ -36,7 +36,7 @@ Quick Start
 1. Download `tdd.h` and `tdd.cpp` into your test directory.
 
 	```
-	wget https://codeberg.org/yellowdragon/tdd/raw/branch/master/tdd.h https://codeberg.org/yellowdragon/tdd/raw/branch/master/tdd.cpp
+	wget https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/README.mdi https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/tdd.h https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/tdd.cpp
 	```
 2. Create a cpp:
 
@@ -223,7 +223,7 @@ TEST(test_custom_print) { EXPECT(0) << S(); }
 Test automatically
 ------------------
 
-[`run`](https://codeberg.org/yellowdragon/tdd/raw/branch/master/run) automatically runs all tests every time something changes in the parent directory.
+[`run`](https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/run) automatically runs all tests every time something changes in the parent directory.
 Any arguments are passed to the compiler. In the absence of arguments, it uses clang++ to compile `*cpp`.
 
 ```
@@ -264,7 +264,7 @@ Note
 - Test names must be unique across all translation units.
 - `RUN_ALL()` must be the last statement.
 - Tests within the same category and translation unit are executed in the order in which they are declared.
-- All test code runs within static initialization. Care must be taken to avoid the [Static Initialization Order Fiasco](https://en.cppreference.com/w/cpp/language/siof). [`sample.cpp`](https://codeberg.org/yellowdragon/tdd/raw/branch/master/sample.cpp) illustrates how to initialize before TDD.
+- All test code runs within static initialization. Care must be taken to avoid the [Static Initialization Order Fiasco](https://en.cppreference.com/w/cpp/language/siof). [`sample.cpp`](https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/sample.cpp) illustrates how to initialize before TDD.
 - Defining `TDD_INIT_IOS` is a quick way to include iostream and initialize `std::ios_base`. Otherwise, using `std::cout` and similar may segfault.
 - Define `TDD_MAX_ERRORS` to limit the maximum number of errors.
 - Functions accessed with `prv()` do not have default arguments.
