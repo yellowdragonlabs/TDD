@@ -264,7 +264,6 @@ Note
 
 - Test names must be unique across all translation units.
 - `RUN_ALL()` must be the last statement.
-- Tests within the same category and translation unit are executed in the order in which they are declared.
 - All test code runs within static initialization. Care must be taken to avoid the [Static Initialization Order Fiasco](https://en.cppreference.com/w/cpp/language/siof).
 - Defining `TDD_INIT_IOS` is a quick way to include iostream and initialize `std::ios_base`. Otherwise, using `std::cout` and similar may segfault.
 - Define `TDD_MAX_ERRORS` to limit the maximum number of errors.
@@ -273,6 +272,7 @@ Note
 	There is no reason for this, and I do not see how it could be accomplished without breaking a ton of C++ code. Friend functions and CRTP'd friends are everywhere.
 - GCC warns about undefined inline functions. We await the [option to supress this](https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66918).
 - Clang had an issue that produces "is not a constant expression" errors. Updating to Clang 15 fixes this.
+- Tests within the same category and translation unit are executed in the order in which they are declared.
 - TDD is thread-safe.
 
 
