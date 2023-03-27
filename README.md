@@ -14,6 +14,7 @@ Despite the name, TDD is not specifically intended for "test driven development"
 
 Tested with GCC and Clang (15 or above).
 
+<a href="https://www.buymeacoffee.com/yellowdragon" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
 Index
 -----
