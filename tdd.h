@@ -413,6 +413,13 @@ namespace dragon {
 	constexpr static auto instantiate() { return params<T>::instantiate(); }
 	// }}}
 	// type_vec {{{
+	// Statically store types:
+	//
+	// using store = type_vec<struct tag>;    // store::current_type<> = type_list<>
+	// store::push<void>();                   // store::current_type<> = type_list<void>
+	//
+	// This is accomplished by defining a friend function every time a type is added, i.e. friend injection.
+	//
 	#if defined(__clang__)
 		#pragma clang diagnostic push
 		#pragma clang diagnostic ignored "-Wundefined-inline"
@@ -423,7 +430,7 @@ namespace dragon {
 	
 	template<class Tag>
 	class type_vec {
-		template<int N, class = NAT>  // The N'th type is stored in is_defined()'s return value.
+		template<int N, class = NAT>  // The N'th type is stored in _aux_is_defined()'s return value.
 		struct store {
 			friend constexpr auto _aux_is_defined(store<N>);
 			constexpr static int v = N;
