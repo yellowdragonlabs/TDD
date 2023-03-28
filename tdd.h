@@ -521,7 +521,10 @@ namespace dragon {
 	};
 	// }}}
 	// classes {{{
-	// Instantiate template with specified parameters.
+	// Generate types from a template.
+	// classes<T, int>             = set<T<int>>
+	// classes<T, set<int, void>>  = set<T<int>, T<void>>
+	//
 	namespace _internal::classes_aux {
 		// flat_reverse {{{
 		template<class...> struct flat_reverse { using type = type_list<>; };
