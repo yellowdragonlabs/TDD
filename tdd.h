@@ -32,7 +32,7 @@
 #ifdef TDD_INIT_IOS
 #include <iostream>
 namespace test::_internal {
-	class init_ios { static inline std::ios_base::Init init{}; };
+	static std::ios_base::Init init_ios{};
 }
 #endif
 
@@ -366,8 +366,6 @@ namespace dragon {
 	// }}}
 	// params {{{
 	// Modify template parameters.
-	// insert_params<type_list<B, C>, A>	// type_list<A, B, C>
-	//
 	template<class T> struct params;
 
 	template<template<class...> class This,
@@ -735,12 +733,9 @@ namespace test {
 
 		// Static function.
 		template<auto MP, class R, class... A>
-		class member_ptr<MP, R (*)(A...)> {
-			static inline member_ptr inst{};
-			constexpr member_ptr() noexcept = default;
-		public:
-			constexpr static auto& dereference() { return inst; }
-			constexpr static auto& dereference(auto&&) { return inst; }  // Allow and ignore object for static members.
+		struct member_ptr<MP, R (*)(A...)> {
+			constexpr static member_ptr dereference()       { return {}; };
+			constexpr static member_ptr dereference(auto&&) { return {}; }  // Allow and ignore object for static members.
 
 			template<class... Args>
 			constexpr decltype(auto) operator()(Args&&... args) const { return (*MP)(forward<Args>(args)...); }
@@ -798,7 +793,7 @@ namespace test {
 		struct registry { using tests = type_vec<registry>; };
 
 		template<template<class> class Test, class Param, auto... Prv>
-		class define_test : registry {
+		class define_test {
 			using MPs = value_list<Prv...>;
 			class access {
 				template<size_t... I>
@@ -817,10 +812,7 @@ namespace test {
 				template<size_t... I> constexpr static decltype(auto) prv(auto&& o) { return walk<I...>::type::dereference(forward<decltype(o)>(o)); }
 			};
 
-			static inline define_test instance{};
-			consteval define_test() noexcept {
-				tests::push<Test<access>>();
-			}
+			decltype(registry::tests::push<Test<access>>()) register_this_test();  // never used
 		};
 		// }}}
 		// exec {{{
@@ -831,7 +823,7 @@ namespace test {
 		class exec {
 			template<class Test>
 			class gen_all_tests {
-				template<auto& F>
+				template<auto F>
 				class exec_test_t {
 					consteval static void constcall() { F(); }
 					static void call() { F(); }
@@ -860,7 +852,7 @@ namespace test {
 				}
 			}
 
-			static inline exec instance{};
+		public:
 			exec() noexcept { exec_all(); }
 		};
 		// }}}
@@ -929,7 +921,7 @@ namespace test {
 #define  CTEST(NAME, ...)  CTESTX(NAME, void __VA_OPT__(, ) __VA_ARGS__)
 #define CRTEST(NAME, ...) CRTESTX(NAME, void __VA_OPT__(, ) __VA_ARGS__)
 
-#define RUN_ALL()                                                      \
-	namespace test::_internal {                                        \
-		template class exec<registry::tests::current_type<>>;          \
+#define RUN_ALL()                                                                      \
+	namespace test::_internal {                                                        \
+		static exec<registry::tests::current_type<>> run_all_define_exec_object_{};    \
 	}
