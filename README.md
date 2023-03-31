@@ -22,9 +22,9 @@ Index
 - [Quick Start](#quick-start)                                    
 - [Performance](#performance)                                    
 - [Constant time, Runtime, or Both](#constant-time-runtime-or-both)
+- [Print](#print)
 - [Generate Multiple Tests](#generate-multiple-tests)            
 - [Access private members](#access-private-members)              
-- [Print](#print)                                                
 - [Test automatically](#test-automatically)                      
 - [Tips](#tips)                                                  
 - [Note](#note)                                                  
@@ -80,6 +80,27 @@ CRTEST(constant_and_runtime_test) {
 }
 ```
 
+Print
+-----
+
+`EXPECT()` can print, GoogleTest style:
+```
+TEST(test_print) { EXPECT(0) << "can print"; }
+```
+Adding another format:
+```
+struct S { int a = 14; int b = 16; };
+
+namespace test {
+    const printer_t& operator<<(const printer_t& p, const S& s) { return p.print("[%d, %d]\n", s.a, s.b); }
+}
+
+TEST(test_custom_print) { EXPECT(0) << S(); }
+```
+
+[Play with code](https://raw.githubusercontent.com/yellowdragonlabs/samples/master/tdd_sample.cpp).
+
+
 Generate Multiple Tests
 -----------------------
 
@@ -91,7 +112,7 @@ TEST(test_widget_c) { C c; EXPECT(c.works()); }
 ```
 The same can be written like this:
 ```
-TESTX(test_widgets, set<A, B, C>) { X x; EXPECT(x.works()); }    // set is not std::set
+TESTX(test_widgets, set<A, B, C>) { X x; EXPECT(x.works()); }    // dragon::set is not std::set
 ```
 But does it also work for `const`?
 ```
@@ -129,6 +150,9 @@ TESTX(test_is_base, parameters<for_each<and_cvref<Base>>,
 	EXPECT(is_base_of<Xs...>);
 }
 ```
+
+[Play with code](https://raw.githubusercontent.com/yellowdragonlabs/samples/master/tdd_sample.cpp).
+
 
 Access private members
 ----------------------
@@ -202,23 +226,6 @@ TEST(test_types, test::type<A::B::type>) {
 	EXPECT(is_same<prv_type<0>, bool>);
 	prv_type<0> b = true;
 }
-```
-
-Print
------
-`EXPECT()` can print, GoogleTest style:
-```
-TEST(test_print) { EXPECT(0) << "can print"; }
-```
-Adding another format:
-```
-struct S { int a = 14; int b = 16; };
-
-namespace test {
-    const printer_t& operator<<(const printer_t& p, const S& s) { return p.print("[%d, %d]\n", s.a, s.b); }
-}
-
-TEST(test_custom_print) { EXPECT(0) << S(); }
 ```
 
 Test automatically
