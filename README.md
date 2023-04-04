@@ -98,7 +98,7 @@ namespace test {
 TEST(test_custom_print) { EXPECT(0) << S(); }
 ```
 
-[Play with code](https://raw.githubusercontent.com/yellowdragonlabs/samples/master/tdd_sample.cpp).
+[Play with the code](https://raw.githubusercontent.com/yellowdragonlabs/samples/master/tdd_sample.cpp).
 
 
 Generate Multiple Tests
@@ -112,14 +112,15 @@ TEST(test_widget_c) { C c; EXPECT(c.works()); }
 ```
 The same can be written like this:
 ```
-TESTX(test_widgets, set<A, B, C>) { X x; EXPECT(x.works()); }    // dragon::set is not std::set
+TESTX(test_widgets, set<A, B, C>) { X x; EXPECT(x.works()); }    // (set is not std::set)
 ```
 But does it also work for `const`?
 ```
 using widgets = set<A, B, C>;
 TESTX(test_widgets, and_const<widgets>) { X x; EXPECT(x.works()); }    // A, const A, B, const B, C, const C
 ```
-That is 6 tests in one. Multiple parameters have to be wrapped:
+That is 6 tests in one.  
+Multiple parameters have to be wrapped:
 ```
 TESTX(test_child_widgets_set, parameters<set<A, B, C>, set<D, E, F>>) {
 	// A, D
@@ -151,7 +152,7 @@ TESTX(test_is_base, parameters<for_each<and_cvref<Base>>,
 }
 ```
 
-[Play with code](https://raw.githubusercontent.com/yellowdragonlabs/samples/master/tdd_sample.cpp).
+[Play with the code](https://raw.githubusercontent.com/yellowdragonlabs/samples/master/tdd_sample.cpp).
 
 
 Access private members
