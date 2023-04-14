@@ -283,7 +283,7 @@ In the absence of arguments, `run` monitors the parent directory and compiles al
 Tips
 ----
 
-- A good habit is to keep heavier tests within `#ifdef EXHAUSTIVE` and then, occasionally, add `-DEXHAUSTIVE` to `run`.
+- A good habit is to keep heavier tests within `#ifdef EXHAUSTIVE` and then, occasionally, add `-DEXHAUSTIVE` to [`run`](#test-automatically).
 - If your template takes non-type parameters, `dragon::constant<>` can be of use:
 
 ```
