@@ -231,8 +231,7 @@ TEST(test_types, test::type<A::B::type>) {
 Test automatically
 ------------------
 
-[`run`](https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/run) automatically runs all tests every time something changes in the parent directory.
-Any arguments are passed to the compiler. In the absence of arguments, it uses clang++ to compile `*cpp`.
+[`run`](https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/run) automatically compiles and runs all tests in the current directory, every time something changes in the specified directory (the parent, by default).
 
 ```
 $ ./run
@@ -251,7 +250,8 @@ $ ./run *cpp -DEXHAUSTIVE
  52 tests, 0 errors.
  0:00.00s (3072kb)
 ```
-The script is easily adaptable.
+
+Any arguments are passed to the compiler, `clang++ -std=c++20`. In the absence of arguments, `run` compiles all *cpp, *cc, *cxx.
 
 
 Tips
