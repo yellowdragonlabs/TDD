@@ -266,7 +266,7 @@ compiling... 0:00.71
 
 $ ./run .. -DEXHAUSTIVE *cpp
 monitoring /home/usr/project
-clang++ -std=c++20  a.cpp b.cpp tdd.cpp
+clang++ -std=c++20  -DEXHAUSTIVE a.cpp b.cpp tdd.cpp
 
 compiling...0:01.46
 52 tests, 0 errors.
