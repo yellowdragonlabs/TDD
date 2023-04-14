@@ -231,10 +231,30 @@ TEST(test_types, test::type<A::B::type>) {
 Test automatically
 ------------------
 
-[`run`](https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/run) automatically compiles and runs all tests in the current directory, every time something changes in the specified directory (the parent, by default).
+A typical project looks like this:
+
+```
+project
+├── a.cpp
+├── a.h
+├── b.cpp
+├── b.h
+└── test
+    ├── a.cpp
+    ├── b.cpp
+    ├── run
+    ├── tdd.cpp
+    └── tdd.h
+```
+
+Now leave a terminal open with [`./run`](https://raw.githubusercontent.com/yellowdragonlabs/TDD/master/run) and edit to your heart's content.
+
+Watch all tests in `test` compile and run automatically every time something changes in the project directory.
 
 ```
 $ ./run
+monitoring /home/usr/project
+clang++ -std=c++20  a.cpp b.cpp tdd.cpp
 
 compiling... 0:00.73
 31 tests, 0 errors.
@@ -244,14 +264,20 @@ compiling... 0:00.71
 31 tests, 0 errors.
 0:00.00s (2672kb)
 
-$ ./run *cpp -DEXHAUSTIVE
+$ ./run .. -DEXHAUSTIVE *cpp
+monitoring /home/usr/project
+clang++ -std=c++20  a.cpp b.cpp tdd.cpp
 
- compiling...0:01.46
- 52 tests, 0 errors.
- 0:00.00s (3072kb)
+compiling...0:01.46
+52 tests, 0 errors.
+0:00.00s (3072kb)
 ```
 
-Any arguments are passed to the compiler, `clang++ -std=c++20`. In the absence of arguments, `run` compiles all *cpp, *cc, *cxx.
+To specify a different directory or compiler arguments:
+
+`run [monitored directory] [compiler arguments]`
+
+In the absence of arguments, `run` monitors the parent directory and compiles all .cpp, .cc, .cxx. The default compiler is `clang++ -std=c++20`.
 
 
 Tips
