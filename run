@@ -1,17 +1,40 @@
 #!/bin/bash
 
-trap 'exit' INT
+# Runs this compiler in the current directory every time something changes in the specified directory,
+# and if successful, runs the resulting program.
+#
+# Without arguments, run monitors the parent directory and compiles all *cpp, *cc, *cxx.
+COMPILE="clang++ -std=c++20"
 
-COMPILE="clang++ -std=c++20 -o t"
+shopt -s nullglob
 
-if [ "$1" == "-R" ]; then
-	shift 1
+usage() {
+	>&2 echo "run [monitored directory] [compiler arguments]"
+	exit 1
+}
+
+if [ "$1" == "--runrunrun" ]; then
+	prog="$2"
+	[ -f "$prog" ] || usage
+	shift 2
+
 	time_prog=$(which time)
-	>&2 echo -ne "\ncompiling..."
-	$time_prog -f "%E" $COMPILE ${@:-*cpp} && $time_prog -f "%Es (%Mkb)" ./t
+	>&2 echo -ne "\ncompiling... "
+	$time_prog -f "%E" $COMPILE ${@:-*cpp *cc *cxx} -o $prog &&
+	$time_prog -f "%Es (%Mkb)" $prog
 else
 	[ -x "$(command -v entr)" ] || { >&2 echo "Please install entr (https://github.com/eradman/entr)."; exit; }
+
+	MONITOR="${1:-..}"
+	[ -d "$MONITOR" ] || usage
+	shift 1
+
+	TMP=$(mktemp)
+	trap "rm -f $TMP; exit" INT
+
+	>&2 echo "monitoring $(cd $MONITOR; pwd)"
+	>&2 echo "$COMPILE " ${@:-*cpp *cc *cxx}
 	while true; do
-		find ../ | entr -nd ./run -R $@
+		find $MONITOR | entr -nd ./run --runrunrun $TMP $@
 	done
 fi
