@@ -868,8 +868,8 @@ namespace test {
 		template<class... Args>
 		const printer_t& print(Args&&... args) const { if (prt) fprintf(stderr, dragon::forward<Args>(args)...); return *this; }
 
-		const printer_t& operator<<(int i) const                { return print("%d\n", i); }
-		const printer_t& operator<<(const char* s) const        { return print("%s\n", s); }
+		const printer_t& operator<<(int i) const         { return print("%d\n", i); }
+		const printer_t& operator<<(const char* s) const { return print("%s\n", s); }
 	};
 
 	template<bool prt> 
@@ -880,7 +880,7 @@ namespace test {
 		if (dragon::is_constant_evaluated())
 			return (3 / (0 + cond)); // error: EXPECT() failed
 		else {  // runtime error
-			fprintf(stderr, "%s:%lu: error: expected %s\n", file, line, msg);
+			fprintf(stderr, "\x1B[1m%s:%lu: \x1B[31merror:\x1B[0m expected %s\n", file, line, msg);
 			if (TDD_MAX_ERRORS == (__atomic_fetch_add(&_internal::errors, 1, __ATOMIC_RELAXED) + 1))
 				exit(_internal::errors);
 		}

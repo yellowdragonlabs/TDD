@@ -28,5 +28,7 @@ namespace test::_internal  {
 }
 
 int main() {
-	printf("%u tests, %u errors.\n", test::_internal::completed, test::_internal::errors);
+	printf(test::_internal::errors ?                "%u tests, %u errors.\n"
+	                               : "\x1B[32m\x1B[1m%u tests, %u errors.\n\x1B[0m",
+	       test::_internal::completed, test::_internal::errors);
 }
