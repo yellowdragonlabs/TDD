@@ -243,18 +243,6 @@ namespace dragon {
 		return tuple<typename _internal::tuple_aux::decay_t<Args>::type...>(forward<Args>(args)...);
 	}
 	// }}}
-	// const_string {{{
-	// Compile time string. Does not outlive the initializing string.
-	struct const_string {
-		const char* v = nullptr;
-		const size_t size = 0;
-
-		template<size_t N>
-		constexpr const_string(const char (&src)[N]) noexcept : v(src), size(N - 1) {}
-
-		constexpr operator const char*() const { return v; }
-	};
-	// }}}
 	// const_counter {{{
 	#if defined(__clang__)
 		#pragma clang diagnostic push
