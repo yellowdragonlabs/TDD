@@ -40,7 +40,7 @@ Quick Start
 	```
 2. Create a cpp:
 
-	```
+	```c++
 	#include "tdd.h"
 
 	TEST(plus)  { EXPECT(14 + 2 == 16); }
@@ -69,7 +69,7 @@ It is nice to have [tests running automatically](#test-automatically) as quickly
 Constant time, Runtime, or Both
 -------------------------------
 
-```
+```c++
 TEST(runtime_test)        { EXPECT(!is_constant_evaluated()); }
 CTEST(constant_time_test) { EXPECT( is_constant_evaluated()); }
 
@@ -83,11 +83,11 @@ Print
 -----
 
 `EXPECT()` can print, GoogleTest style:
-```
+```c++
 TEST(test_print) { EXPECT(0) << "can print"; }
 ```
 Adding another format:
-```
+```c++
 struct S { int a = 14; int b = 16; };
 
 namespace test {
@@ -104,23 +104,23 @@ Generate Multiple Tests
 -----------------------
 
 Suppose:
-```
+```c++
 TEST(test_widget_a) { A a; EXPECT(a.works()); }
 TEST(test_widget_b) { B b; EXPECT(b.works()); }
 TEST(test_widget_c) { C c; EXPECT(c.works()); }
 ```
 The same can be written like this:
-```
+```c++
 TESTX(test_widgets, set<A, B, C>) { X x; EXPECT(x.works()); }    // (set is not std::set)
 ```
 But does it also work for `const`?
-```
+```c++
 using widgets = set<A, B, C>;
 TESTX(test_widgets, and_const<widgets>) { X x; EXPECT(x.works()); }    // A, const A, B, const B, C, const C
 ```
 That is 6 tests in one.  
 Multiple parameters have to be wrapped:
-```
+```c++
 TESTX(test_child_widgets_set, parameters<set<A, B, C>, set<D, E, F>>) {
 	// A, D
 	// B, E
@@ -144,7 +144,7 @@ TESTX(test_child_widgets, parameters<for_each<A, B, C>, set<D, E, F>>) {
 }
 ```
 144 tests in one:
-```
+```c++
 TESTX(test_is_base, parameters<for_each<and_cvref<Base>>,
                                for_each<and_cvref<Derived>>>) {
 	EXPECT(is_base_of<Xs...>);
@@ -160,7 +160,7 @@ Access private members
 There is no reason to hinder testing, ever. TDD provides direct access to private members with near zero runtime overhead.
 Simply pass member pointers to the test and use `prv`:
 
-```
+```c++
 class A { private: int n = 14;
 	class B { private: int n = 16;
 		class C { private: int n = 18; } c;
@@ -175,7 +175,7 @@ TEST(test_n, &A::n) {
 ```
 `prv` gives direct references (except in the case of functions). To have an alias use `prv_ref`, which is just a macro for `decltype(auto)`:
 
-```
+```c++
 TEST(test_all_n,
      &A::b,
      &A::B::c,
@@ -205,7 +205,7 @@ Private Functions
 
 Same syntax:
 
-```
+```c++
 class F {
 	int times2(int n) { return n * 2; }
 	constexpr static int g(bool b) { return b ? 14 : 0; }
@@ -221,7 +221,7 @@ TEST(test_call, &F::times2, &F::g) {
 Private Types
 -------------
 
-```
+```c++
 TEST(test_types, test::type<A::B::type>) {
 	EXPECT(is_same<prv_type<0>, bool>);
 	prv_type<0> b = true;
@@ -251,7 +251,7 @@ Now leave a terminal open with [`./run`](https://raw.githubusercontent.com/yello
 
 Watch all tests in `test` compile and run automatically every time something changes in the project directory.
 
-```
+```sh
 $ ./run
 monitoring /home/usr/project
 clang++ -std=c++20  a.cpp b.cpp tdd.cpp
@@ -286,7 +286,7 @@ Tips
 - A good habit is to keep heavier tests within `#ifdef EXHAUSTIVE` and then, occasionally, add `-DEXHAUSTIVE` to [`run`](#test-automatically).
 - If your template takes non-type parameters, `dragon::constant<>` can be of use:
 
-```
+```c++
 	TESTX(test_const, constant<14>) {
 		EXPECT(X::v == 14);
 	}
