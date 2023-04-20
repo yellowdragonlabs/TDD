@@ -86,7 +86,7 @@ Print
 ```c++
 TEST(test_print) { EXPECT(0) << "can print"; }
 ```
-Adding another format:
+Adding another format is easy:
 ```c++
 struct S { int a = 14; int b = 16; };
 
