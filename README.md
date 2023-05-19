@@ -8,7 +8,7 @@ See while you code. TDD is a zero dependency test system that is 23x faster than
 - **Fast:** So fast that tests can run automatically every time you save.
 - **Zero setup:** Start immediately. No CMake, no standard library needed.
 - **Test private members** without changing your code.
-- **Powerful:** Generates tests even more powerfully than templates.
+- **Powerful:** Write a Test Template and let TDD generate the tests for you.
 
 Despite the name, TDD is not specifically intended for "test driven development" but serves all testing purposes.
 
@@ -22,7 +22,7 @@ Index
 - [Performance](#performance)                                    
 - [Constant time, Runtime, or Both](#constant-time-runtime-or-both)
 - [Print](#print)
-- [Generate Multiple Tests](#generate-multiple-tests)            
+- [Test Templates](#test-templates)            
 - [Access private members](#access-private-members)              
 - [Test automatically](#test-automatically)                      
 - [Tips](#tips)                                                  
@@ -100,8 +100,8 @@ TEST(test_custom_print) { EXPECT(0) << S(); }
 [Play with the code](https://raw.githubusercontent.com/yellowdragonlabs/samples/master/tdd_sample.cpp).
 
 
-Generate Multiple Tests
------------------------
+Test Templates
+--------------
 
 Suppose:
 ```c++
