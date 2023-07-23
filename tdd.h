@@ -884,6 +884,7 @@ namespace test {
 	__FILE__ ":" TEST_INTERNAL_NTOS_(__LINE__) ": error: expected '" #EXPR "'\n"
 
 #define EXPECT(...) test::expect((__VA_ARGS__), __FILE__, __LINE__, TEST_INTERNAL_STR_((__VA_ARGS__)))
+#define ABORT(...) if (EXPECT(__VA_ARGS__).prt) return
 
 
 #define DECL_TEST_(CONSTEXPR, CAT, NAME, PARAM, ...)                                                                                                 \
