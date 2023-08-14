@@ -19,7 +19,7 @@ if [ "$1" == "--runrunrun" ]; then
 	shift 2
 
 	time_prog=$(which time)
-	>&2 echo -e "\e[1;33m==> compiling <==\e[0m"
+	>&2 echo -e "\n\e[1;33m==> compiling <==\e[0m"
 	$time_prog -f "%E" $COMPILE ${@:-*cpp *cc *cxx} -o $prog &&
 	$time_prog -f "%Es (%Mkb)" $prog
 else

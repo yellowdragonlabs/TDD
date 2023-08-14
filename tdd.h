@@ -26,7 +26,7 @@
 #endif
 
 #ifndef TDD_MAX_ERRORS
-#define TDD_MAX_ERRORS 0
+#define TDD_MAX_ERRORS 5
 #endif
 
 #ifdef TDD_INIT_IOS
@@ -200,29 +200,28 @@ namespace dragon {
 		return static_cast<typename remove_ref_t<T>::type&&>(v);
 	}
 	// }}}
+	// decay {{{
+	template<class T,
+			 class U = typename remove_ref_t<T>::type,
+			 bool = is_const_t<const U>::v>  // false for functions
+	struct decay_t;
+	template<class T, class U>           struct decay_t<T, U, true>    { using type = typename remove_cv_t<T>::type; };
+	template<class T, class U>           struct decay_t<T, U, false>   { using type = U*; };
+	template<class T, class U>           struct decay_t<T, U[], true>  { using type = T*; };
+	template<class T, class U, size_t N> struct decay_t<T, U[N], true> { using type = T*; };
+	// }}}
 	// tuple {{{
-	namespace _internal::tuple_aux {
-		template<class R,
-		         class T = typename remove_ref_t<R>::type,
-				 bool = is_function_t<T>::v>
-		struct decay_t;
-		template<class R, class T>           struct decay_t<R, T, false>    { using type = typename remove_cv_t<T>::type; };
-		template<class R, class F>           struct decay_t<R, F, true>     { using type = typename add_pointer_t<F>::type; };
-		template<class R, class T>           struct decay_t<R, T[], false>  { using type = T*; };
-		template<class R, class T, size_t N> struct decay_t<R, T[N], false> { using type = T*; };
-	}
-
 	template<class...> struct tuple {};
 	template<class T, class... Ts>
 	struct tuple<T, Ts...> : tuple<Ts...> {
 		constexpr static size_t size = 1 + sizeof...(Ts);
 
-		constexpr tuple() noexcept = default;
-		constexpr tuple(const tuple&) noexcept = default;
-		constexpr tuple(tuple&&) noexcept = default;
+		constexpr tuple()             = default;
+		constexpr tuple(const tuple&) = default;
+		constexpr tuple(tuple&&)      = default;
 
 		template<class Arg, class... Args>
-		constexpr tuple(Arg&& arg, Args&&... args) noexcept
+		constexpr tuple(Arg&& arg, Args&&... args)
 			: tuple<Ts...>(forward<Args>(args)...),
 			  x(forward<Arg>(arg)) {}
 
@@ -234,13 +233,14 @@ namespace dragon {
 
 		constexpr T& data() { return x; }
 		constexpr const T& data() const { return x; }
+
 	private:
 		T x;
 	};
 
 	template<class... Args>
 	constexpr auto make_tuple(Args&&... args) {
-		return tuple<typename _internal::tuple_aux::decay_t<Args>::type...>(forward<Args>(args)...);
+		return tuple<typename decay_t<Args>::type...>(forward<Args>(args)...);
 	}
 	// }}}
 	// const_counter {{{
@@ -849,19 +849,26 @@ namespace test {
 	template<class T>
 	constexpr _internal::type_wrapper<T> type = _internal::type_wrapper<T>{};
 
+	// print {{{
 	struct printer_t {
 		bool prt;
 		constexpr printer_t(bool p) noexcept : prt(p) {}
 
-		template<class... Args>
-		const printer_t& print(Args&&... args) const { if (prt) fprintf(stderr, dragon::forward<Args>(args)...); return *this; }
+		explicit constexpr operator bool() const { return !prt; }
 
-		const printer_t& operator<<(int i) const         { return print("%d\n", i); }
-		const printer_t& operator<<(const char* s) const { return print("%s\n", s); }
+		template<class... Args>
+		constexpr const printer_t& print(Args&&... args) const {
+			if (prt) fprintf(stderr, dragon::forward<Args>(args)...);
+			return *this;
+		}
 	};
+
+	constexpr const printer_t& operator<<(const printer_t& p, int i)         { return p.print("%d\n", i); }
+	constexpr const printer_t& operator<<(const printer_t& p, const char* s) { return p.print("%s\n", s); }
 
 	template<bool prt> 
 	constexpr printer_t printer(prt);
+	// }}}
 
 	constexpr printer_t expect(bool cond, const char* file, size_t line, const char* msg) {
 		if (cond) return printer<false>;
@@ -874,6 +881,11 @@ namespace test {
 		}
 		return printer<true>;
 	}
+
+	constexpr printer_t eq(const char* file, size_t line, const char* msg,
+	                       const auto& a, const auto&... b) {
+		return ((expect(((a == b) && ...), file, line, msg) << a) << ... << b);
+	}
 }
 
 #define prv_ref decltype(auto)
@@ -884,8 +896,15 @@ namespace test {
 	__FILE__ ":" TEST_INTERNAL_NTOS_(__LINE__) ": error: expected '" #EXPR "'\n"
 
 #define EXPECT(...) test::expect((__VA_ARGS__), __FILE__, __LINE__, TEST_INTERNAL_STR_((__VA_ARGS__)))
-#define ABORT(...) if (EXPECT(__VA_ARGS__).prt) return
+#define NEED(...) if (EXPECT(__VA_ARGS__)) return
 
+#define EQ(...) test::eq(__FILE__, __LINE__, TEST_INTERNAL_STR_((__VA_ARGS__)), __VA_ARGS__)
+
+#define NE(A, B) EXPECT((A) != (B)) << (A) << (B)
+#define GE(A, B) EXPECT((A) >= (B)) << (A) << (B)
+#define GT(A, B) EXPECT((A) >  (B)) << (A) << (B)
+#define LE(A, B) EXPECT((A) <= (B)) << (A) << (B)
+#define LT(A, B) EXPECT((A) <  (B)) << (A) << (B)
 
 #define DECL_TEST_(CONSTEXPR, CAT, NAME, PARAM, ...)                                                                                                 \
 	namespace test::_internal {                                                                                                                      \
