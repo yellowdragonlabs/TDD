@@ -435,7 +435,6 @@ namespace tdd::_internal_tdd {
 
 	#if defined(__clang__)
 		#pragma clang diagnostic pop
-		#pragma clang diagnostic pop
 	#elif defined(__GNUC__)
 		#pragma GCC diagnostic pop
 	#endif
