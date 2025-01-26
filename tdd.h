@@ -833,6 +833,11 @@ namespace tdd {
 	constexpr _internal_tdd::type_wrapper<T> type = _internal_tdd::type_wrapper<T>{};
 
 	// print {{{
+	#if defined(__clang__)
+		#pragma clang diagnostic push
+		#pragma clang diagnostic ignored "-Wformat-security"
+	#endif
+
 	struct printer_t {
 		bool prt;
 		constexpr printer_t(bool p) noexcept : prt(p) {}
@@ -851,6 +856,10 @@ namespace tdd {
 
 	template<bool prt> 
 	constexpr printer_t printer(prt);
+	
+	#if defined(__clang__)
+		#pragma clang diagnostic pop
+	#endif
 	// }}}
 
 	constexpr printer_t expect(bool cond, const char* file, size_t line, const char* msg) {
