@@ -22,13 +22,14 @@
 
 #include <stdio.h>
 
-namespace test::_internal  {
+namespace tdd::_internal_tdd  {
 	unsigned errors = 0;
 	unsigned completed = 0;
 }
 
 int main() {
-	printf(test::_internal::errors ?                "%u tests, %u errors.\n"
-	                               : "\x1B[32m\x1B[1m%u tests, %u errors.\n\x1B[0m",
-	       test::_internal::completed, test::_internal::errors);
+	printf(tdd::_internal_tdd::errors ?                "%u tests, %u errors.\n"
+	                                  : "\x1B[32m\x1B[1m%u tests, %u errors.\n\x1B[0m",
+	       tdd::_internal_tdd::completed, tdd::_internal_tdd::errors);
+	return tdd::_internal_tdd::errors != 0;
 }

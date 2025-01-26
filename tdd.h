@@ -24,6 +24,9 @@
 #if !defined(__ATOMIC_RELAXED) || !__has_builtin(__atomic_fetch_add)
 	#error "tdd.h needs __atomic builtins"
 #endif
+#if !__has_builtin(__builtin_is_constant_evaluated)
+	#error "tdd.h needs __builtin_is_constant_evaluated"
+#endif
 
 #ifndef TDD_MAX_ERRORS
 #define TDD_MAX_ERRORS 5
@@ -31,13 +34,13 @@
 
 #ifdef TDD_INIT_IOS
 #include <iostream>
-namespace test::_internal {
+namespace tdd::_internal_tdd {
 	static std::ios_base::Init init_ios{};
 }
 #endif
 
 // requisites {{{
-namespace dragon {
+namespace tdd::_internal_tdd {
 	using size_t = decltype(sizeof(int));
 
 	struct NAT {};
@@ -74,18 +77,6 @@ namespace dragon {
 	template<class T> struct remove_cv_t : remove_const_t<typename remove_volatile_t<T>::type> {};
 	template<class T> struct remove_cvref_t : remove_cv_t<typename remove_ref_t<T>::type> {};
 	// }}}
-	// declval {{{
-	namespace _internal::declval_aux {
-		template<class T, class U = T&&>
-		U f(int);
-
-		template<class T>
-		T f(long);
-	}
-
-	template<class T>
-	decltype(_internal::declval_aux::f<T>(0)) declval() noexcept;
-	// }}}
 	// naked: remove cvref and pointers. {{{
 	template<class T> struct naked_t                   { using type = T; };
 	template<class T> struct naked_t<T&>               { using type = typename naked_t<T>::type; };
@@ -100,16 +91,14 @@ namespace dragon {
 	template<class T> struct is_same_t<T, T> : true_t {};
 	// }}}
 	// are_same / is_any_of {{{
-	namespace _internal {
-		template<bool And, class A, class... B>
-		struct type_comparison {
-			using type = A;
-			constexpr static bool v = And ? (is_same_t<A, B>::v && ...) : (is_same_t<A, B>::v || ...);
-		};
-	}
+	template<bool And, class A, class... B>
+	struct _type_comparison {
+		using type = A;
+		constexpr static bool v = And ? (is_same_t<A, B>::v && ...) : (is_same_t<A, B>::v || ...);
+	};
 
-	template<class... T> using are_same_t = _internal::type_comparison<true, T...>;
-	template<class... T> using is_any_of_t = _internal::type_comparison<false, T...>;
+	template<class... T> using are_same_t = _type_comparison<true, T...>;
+	template<class... T> using is_any_of_t = _type_comparison<false, T...>;
 	// }}}
 	// is_const / is_function, etc... {{{
 	template<class T> struct is_const_t : false_t {};
@@ -123,8 +112,6 @@ namespace dragon {
 
 	template<class T> using is_void_t = is_same_t<void, typename remove_cv_t<T>::type>;
 
-	template<class T> using is_floating_point_t = is_any_of_t<typename naked_t<T>::type, float, double, long double>;
-
 	template<class T>           struct is_array_t       : false_t {};
 	template<class T>           struct is_array_t<T[]>  : true_t {};
 	template<class T, size_t N> struct is_array_t<T[N]> : true_t {};
@@ -135,48 +122,44 @@ namespace dragon {
 	};
 	// }}}
 	// conditional {{{
-	namespace _internal {
-		template<bool>
-		struct conditional_aux {
-			template<class T, class F> using type = F;
-		};
+	template<bool>
+	struct _conditional {
+		template<class T, class F> using type = F;
+	};
 
-		template<>
-		struct conditional_aux<true> {
-			template<class T, class F> using type = T;
-		};
-	}
+	template<>
+	struct _conditional<true> {
+		template<class T, class F> using type = T;
+	};
 
 	template<bool cond, class A, class B>
-	using conditional = typename _internal::conditional_aux<cond>::template type<A, B>;
+	using conditional = typename _conditional<cond>::template type<A, B>;
 	// }}}
 	// is_base_of {{{
-	namespace _internal {
-		template<class B, class D>
-		class is_base_of_aux {
-			template<class Base, class Derived>
-			struct _aux_ {
-				operator Base*() const;
-				operator Derived*();
-			};
-
-		public:
-			template<class T>
-			static true_t _test_aux_(D*, T);
-			static false_t _test_aux_(B*, int);
-
-			constexpr static bool v = decltype(_test_aux_(_aux_<B, D>(), int()))::v;
+	template<class B, class D>
+	class _is_base_of {
+		template<class Base, class Derived>
+		struct _aux_ {
+			operator Base*() const;
+			operator Derived*();
 		};
 
-		// Void is always unrelated.
-		template<>        struct is_base_of_aux<void, void> : false_t {};
-		template<class B> struct is_base_of_aux<B, void> : false_t {};
-		template<class D> struct is_base_of_aux<void, D> : false_t {};
-	}
+	public:
+		template<class T>
+		static true_t _test_aux_(D*, T);
+		static false_t _test_aux_(B*, int);
+
+		constexpr static bool v = decltype(_test_aux_(_aux_<B, D>(), int()))::v;
+	};
+
+	// Void is always unrelated.
+	template<>        struct _is_base_of<void, void> : false_t {};
+	template<class B> struct _is_base_of<B, void> : false_t {};
+	template<class D> struct _is_base_of<void, D> : false_t {};
 
 	template<class B, class D>
-	struct is_base_of_t : _internal::is_base_of_aux<typename naked_t<B>::type,
-	                                                typename naked_t<D>::type> {};
+	struct is_base_of_t : _is_base_of<typename naked_t<B>::type,
+	                                  typename naked_t<D>::type> {};
 	// }}}
 	// is_constant_evaluated {{{
 	constexpr bool is_constant_evaluated() noexcept {
@@ -305,11 +288,11 @@ namespace dragon {
 	// template<class... Ts> struct char2void_t<char, Ts...> : char2void_t<Ts..., void> {};
 	// // char2void<int, char, char, bool> = type_list<int, void, void, bool>
 	// 
-	#define NATTED(C)                                                                                  \
-		struct C##_NAT {};                                                                             \
-		template<class...> struct C##_t { using type = dragon::type_list<>; };                         \
-		template<class T, class... Ts> struct C##_t<T, Ts...> : C##_t<Ts..., T> {};                    \
-		template<class... T> struct C##_t<C##_NAT, T...> { using type = dragon::type_list<T...>; };    \
+	#define NATTED(C)                                                                                                \
+		struct C##_NAT {};                                                                                           \
+		template<class...> struct C##_t { using type = ::tdd::_internal_tdd::type_list<>; };                         \
+		template<class T, class... Ts> struct C##_t<T, Ts...> : C##_t<Ts..., T> {};                                  \
+		template<class... T> struct C##_t<C##_NAT, T...> { using type = ::tdd::_internal_tdd::type_list<T...>; };    \
 		template<class... T> using C = typename C##_t<T..., C##_NAT>::type
 
 	// NATTED2 has an extra user supplied parameter, and an integer that is incremented when parameters are stored.
@@ -318,24 +301,22 @@ namespace dragon {
 	// struct rm_type_t<I, RM, RM, Ts...> : rm_type_t<I, RM, Ts...> {};
 	// // rm_type<void, int, void, void, bool> = type_list<int, bool>
 	// 
-	#define NATTED2(C)                                                                                                       \
-		struct C##_NAT {};                                                                                                   \
-		template<int I, class P, class...> struct C##_t { using type = dragon::type_list<>; };                               \
-		template<int I, class P, class T, class... Ts> struct C##_t<I, P, T, Ts...> : C##_t<I + 1, P, Ts..., T> {};          \
-		template<int I, class P, class... T> struct C##_t<I, P, C##_NAT, T...> { using type = dragon::type_list<T...>; };    \
+	#define NATTED2(C)                                                                                                                     \
+		struct C##_NAT {};                                                                                                                 \
+		template<int I, class P, class...> struct C##_t { using type = ::tdd::_internal_tdd::type_list<>; };                               \
+		template<int I, class P, class T, class... Ts> struct C##_t<I, P, T, Ts...> : C##_t<I + 1, P, Ts..., T> {};                        \
+		template<int I, class P, class... T> struct C##_t<I, P, C##_NAT, T...> { using type = ::tdd::_internal_tdd::type_list<T...>; };    \
 		template<class... T> using C = typename C##_t<0, T..., C##_NAT>::type
 	// }}}
 	// nth {{{
-	namespace _internal {
-		NATTED2(nth_base);
-		NATTED2(nth_value_base);
-		template<int I, class T, class... Ts> struct          nth_base_t<I, constant<I>, T, Ts...> { using type = T; };
-		template<int I, class T, class... Ts> struct    nth_value_base_t<I, constant<I>, T, Ts...> { using type = T; };
-	}
-	template<int I, class... T> using nth = _internal::nth_base<constant<I>, T...>;
+	NATTED2(_nth_base);
+	NATTED2(_nth_value_base);
+	template<int I, class T, class... Ts> struct         _nth_base_t<I, constant<I>, T, Ts...> { using type = T; };
+	template<int I, class T, class... Ts> struct   _nth_value_base_t<I, constant<I>, T, Ts...> { using type = T; };
+	template<int I, class... T> using nth = _nth_base<constant<I>, T...>;
 
 	template<int I, auto... X>
-	constexpr auto nth_value = _internal::nth_value_base<constant<I>, constant<X>...>::v;
+	constexpr auto nth_value = _nth_value_base<constant<I>, constant<X>...>::v;
 	// }}}
 	// value_list {{{
 	template<auto... V>
@@ -409,6 +390,7 @@ namespace dragon {
 	#if defined(__clang__)
 		#pragma clang diagnostic push
 		#pragma clang diagnostic ignored "-Wundefined-inline"
+		#pragma clang diagnostic ignored "-Wunused-parameter"
 	#elif defined(__GNUC__)
 		#pragma GCC diagnostic push
 		#pragma GCC diagnostic ignored "-Wnon-template-friend"
@@ -453,6 +435,7 @@ namespace dragon {
 
 	#if defined(__clang__)
 		#pragma clang diagnostic pop
+		#pragma clang diagnostic pop
 	#elif defined(__GNUC__)
 		#pragma GCC diagnostic pop
 	#endif
@@ -461,11 +444,9 @@ namespace dragon {
 	template<class T, class... Ts> struct set      : type_list<T, Ts...> {};
 	template<class T, class... Ts> struct for_each : type_list<T, Ts...> {};
 
-	namespace _internal {
-		constexpr NAT seq_nat{};
-	}
+	constexpr NAT _seq_nat{};
 
-	template<auto F, auto S = _internal::seq_nat, auto L = _internal::seq_nat>
+	template<auto F, auto S = _seq_nat, auto L = _seq_nat>
 	struct seq {
 		constexpr static int first = F;
 		constexpr static int step  = S;
@@ -473,37 +454,33 @@ namespace dragon {
 		constexpr static size_t size = 1 + ((F < L) ? (L - F) : (F - L)) / ((S < 0) ? -S : S);
 	};
 
-	template<int L> struct seq<L, _internal::seq_nat, _internal::seq_nat> : seq<0, 1, L> {};
-	template<int F, int L> struct seq<F, L, _internal::seq_nat> : seq<F, 1, L> {};
+	template<int L> struct seq<L, _seq_nat, _seq_nat> : seq<0, 1, L> {};
+	template<int F, int L> struct seq<F, L, _seq_nat> : seq<F, 1, L> {};
 	// }}}
 	// type_variant {{{
-	namespace _internal {
-		NATTED(unpack_sets);
-		template<class... T, class... Ts> struct unpack_sets_t<     set<T...>, Ts...> : unpack_sets_t<T..., Ts...> {};
-		template<class... T, class... Ts> struct unpack_sets_t<for_each<T...>, Ts...> : unpack_sets_t<T..., Ts...> {};
-	}
+	NATTED(_unpack_sets);
+	template<class... T, class... Ts> struct _unpack_sets_t<     set<T...>, Ts...> : _unpack_sets_t<T..., Ts...> {};
+	template<class... T, class... Ts> struct _unpack_sets_t<for_each<T...>, Ts...> : _unpack_sets_t<T..., Ts...> {};
 
-	namespace _internal::variant_aux {
-		template<template<class> class> struct variant_pkg {};
+	template<template<class> class> struct _variant_pkg {};
 
-		NATTED2(expand_variants);
-		template<int I, template<class> class V, class T, class... Ts>     // Normal type.
-		struct expand_variants_t<I, variant_pkg<V>, T, Ts...>
-			: expand_variants_t<I, variant_pkg<V>, Ts..., T, typename V<T>::type> {};
+	NATTED2(_expand_variants);
+	template<int I, template<class> class V, class T, class... Ts>     // Normal type.
+	struct _expand_variants_t<I, _variant_pkg<V>, T, Ts...>
+		: _expand_variants_t<I, _variant_pkg<V>, Ts..., T, typename V<T>::type> {};
 
-		template<int I, template<class> class V, class... T, class... Ts>  // Join other set<>s.
-		struct expand_variants_t<I, variant_pkg<V>, set<T...>, Ts...>
-			: expand_variants_t<I, variant_pkg<V>, T..., Ts...> {};
+	template<int I, template<class> class V, class... T, class... Ts>  // Join other set<>s.
+	struct _expand_variants_t<I, _variant_pkg<V>, set<T...>, Ts...>
+		: _expand_variants_t<I, _variant_pkg<V>, T..., Ts...> {};
 
-		template<int I, template<class> class V, class... T>               // Final: unpack set<>s produced by the variant.
-		struct expand_variants_t<I, variant_pkg<V>, expand_variants_NAT, T...> {
-			using type = template_cast<set, unpack_sets<T...>>;
-		};
-	}
+	template<int I, template<class> class V, class... T>               // Final: unpack set<>s produced by the variant.
+	struct _expand_variants_t<I, _variant_pkg<V>, _expand_variants_NAT, T...> {
+		using type = template_cast<set, _unpack_sets<T...>>;
+	};
 
 	template<template<class> class Variant, class... T>
 	struct type_variant_t {
-		using type = _internal::variant_aux::expand_variants<_internal::variant_aux::variant_pkg<Variant>, T...>;
+		using type = _expand_variants<_variant_pkg<Variant>, T...>;
 	};
 	// }}}
 	// classes {{{
@@ -511,28 +488,26 @@ namespace dragon {
 	// classes<T, int>             = set<T<int>>
 	// classes<T, set<int, void>>  = set<T<int>, T<void>>
 	//
-	namespace _internal::classes_aux {
+	namespace _classes_aux {
 		// flat_reverse {{{
 		template<class...> struct flat_reverse { using type = type_list<>; };
 		template<class    T, class... Ts> struct flat_reverse<             T, Ts...> { using type = append_params<typename flat_reverse<Ts...>::type, T>; };
-		template<class... T, class... Ts> struct flat_reverse<     set<T...>, Ts...> { using type = append_params<typename flat_reverse<Ts...>::type, template_cast<     set, unpack_sets<T...>>>; };
-		template<class... T, class... Ts> struct flat_reverse<for_each<T...>, Ts...> { using type = append_params<typename flat_reverse<Ts...>::type, template_cast<for_each, unpack_sets<T...>>>; };
+		template<class... T, class... Ts> struct flat_reverse<     set<T...>, Ts...> { using type = append_params<typename flat_reverse<Ts...>::type, template_cast<     set, _unpack_sets<T...>>>; };
+		template<class... T, class... Ts> struct flat_reverse<for_each<T...>, Ts...> { using type = append_params<typename flat_reverse<Ts...>::type, template_cast<for_each, _unpack_sets<T...>>>; };
 		// }}}
 		// cast_template {{{
 		// cast_template<To, From,
 		//               int, A<char>, From<void>> = type_list<int, A<char>, To<void>>
-		namespace _detail {
-			NATTED2(cast_template_base);
-			template<int I, template<class...> class To, template<class...> class From,
-					 class... T, class... Ts>
-			struct cast_template_base_t<I, template_list<To, From>, From<T...>, Ts...>
-			     : cast_template_base_t<I, template_list<To, From>, Ts..., To<T...>> {};
-		}
+		NATTED2(cast_template_base);
+		template<int I, template<class...> class To, template<class...> class From,
+				 class... T, class... Ts>
+		struct cast_template_base_t<I, template_list<To, From>, From<T...>, Ts...>
+			 : cast_template_base_t<I, template_list<To, From>, Ts..., To<T...>> {};
 
 		template<template<class...> class To,
 		         template<class...> class From,
 				 class... T>
-		using cast_template = _detail::cast_template_base<template_list<To, From>, T...>;
+		using cast_template = cast_template_base<template_list<To, From>, T...>;
 		// }}}
 		// expand_for_each {{{
 		// expand_for_each<type_list<type_list<A>, type_list<B>, type_list<C>>,  // Save
@@ -607,11 +582,11 @@ namespace dragon {
 	template<template<class...> class TT, class... Param>
 	class classes_t {
 		// In reverse order, with no recursive set/for_each.
-		using sets = template_cast<_internal::classes_aux::expand,
-		                           typename _internal::classes_aux::flat_reverse<Param...>::type>;
+		using sets = template_cast<_classes_aux::expand,
+		                           typename _classes_aux::flat_reverse<Param...>::type>;
 
 		template<class... T>
-		using cast = _internal::classes_aux::cast_template<TT, type_list, T...>;
+		using cast = _classes_aux::cast_template<TT, type_list, T...>;
 	public:
 		using type = template_cast<set, template_cast<cast, sets>>;
 	};
@@ -636,7 +611,6 @@ namespace dragon {
 	template<class T> constexpr bool is_lref           = is_lref_t<T>::v;
 	template<class T> constexpr bool is_rref           = is_rref_t<T>::v;
 	template<class T> constexpr bool is_ref            = is_lref<T> || is_rref<T>;
-	template<class T> constexpr bool is_floating_point = is_floating_point_t<T>::v;
 	template<class T> constexpr bool is_array          = is_array_t<T>::v;
 	template<class T> constexpr bool is_function       = is_function_t<T>::v;
 	template<class T> constexpr bool is_void           = is_void_t<T>::v;
@@ -654,31 +628,41 @@ namespace dragon {
 	template<template<class> class Variant, class... T>
 	using type_variant = typename type_variant_t<Variant, T...>::type;
 
-	namespace _internal {
-		template<class T> struct add_ref { using type = set<T&, T&&>; }; // Special variant adds two types.
-	}
+	template<class T> struct _add_ref { using type = set<T&, T&&>; }; // Special variant adds two types.
 
 	template<class... T> using and_const    = type_variant<add_const_t, T...>;
 	template<class... T> using and_volatile = type_variant<add_volatile_t, T...>;
 	template<class... T> using and_pointer  = type_variant<add_pointer_t, T...>;
 	template<class... T> using and_lref     = type_variant<add_lref_t, T...>;
 	template<class... T> using and_rref     = type_variant<add_rref_t, T...>;
-	template<class... T> using and_ref      = type_variant<_internal::add_ref, T...>;
+	template<class... T> using and_ref      = type_variant<_add_ref, T...>;
 	template<class... T> using and_cv       = and_const<and_volatile<T...>>;
 	template<class... T> using and_cvref    = and_ref<and_cv<T...>>;
 	// }}}
-} // dragon
+} // tdd::_internal_tdd
 // }}}
 
 #include <stdio.h>
 #include <stdlib.h>
 
-namespace test {
-	template<class... T> struct parameters : dragon::type_list<T...> {};
+namespace tdd {
+	using _internal_tdd::set;
+	using _internal_tdd::for_each;
+	using _internal_tdd::seq;
+	using _internal_tdd::type_variant;
+	using _internal_tdd::classes;
+	using _internal_tdd::and_const;
+	using _internal_tdd::and_volatile;
+	using _internal_tdd::and_pointer;
+	using _internal_tdd::and_lref;
+	using _internal_tdd::and_rref;
+	using _internal_tdd::and_ref;
+	using _internal_tdd::and_cv;
+	using _internal_tdd::and_cvref;
 
-	namespace _internal {
-		using namespace dragon;
+	template<class... T> struct parameters : _internal_tdd::type_list<T...> {};
 
+	namespace _internal_tdd {
 		extern unsigned errors;
 		extern unsigned completed;
 
@@ -844,10 +828,10 @@ namespace test {
 			exec() noexcept { exec_all(); }
 		};
 		// }}}
-	} // _internal
+	} // _internal_tdd
 
 	template<class T>
-	constexpr _internal::type_wrapper<T> type = _internal::type_wrapper<T>{};
+	constexpr _internal_tdd::type_wrapper<T> type = _internal_tdd::type_wrapper<T>{};
 
 	// print {{{
 	struct printer_t {
@@ -858,7 +842,7 @@ namespace test {
 
 		template<class... Args>
 		constexpr const printer_t& print(Args&&... args) const {
-			if (prt) fprintf(stderr, dragon::forward<Args>(args)...);
+			if (prt) fprintf(stderr, _internal_tdd::forward<Args>(args)...);
 			return *this;
 		}
 	};
@@ -872,18 +856,19 @@ namespace test {
 
 	constexpr printer_t expect(bool cond, const char* file, size_t line, const char* msg) {
 		if (cond) return printer<false>;
-		if (dragon::is_constant_evaluated())
+		if (_internal_tdd::is_constant_evaluated())
 			return (3 / (0 + cond)); // error: EXPECT() failed
 		else {  // runtime error
 			fprintf(stderr, "\x1B[1m%s:%lu: \x1B[31merror:\x1B[0m expected %s\n", file, line, msg);
-			if (TDD_MAX_ERRORS == (__atomic_fetch_add(&_internal::errors, 1, __ATOMIC_RELAXED) + 1))
-				exit(_internal::errors);
+			if (TDD_MAX_ERRORS == (__atomic_fetch_add(&_internal_tdd::errors, 1, __ATOMIC_RELAXED) + 1))
+				exit(_internal_tdd::errors);
 		}
 		return printer<true>;
 	}
 
+	template<class A, class... B> requires(requires(const A& a, const B&... b) { true && ((a == b) && ...); })
 	constexpr printer_t eq(const char* file, size_t line, const char* msg,
-	                       const auto& a, const auto&... b) {
+	                       const A& a, const B&... b) {
 		return ((expect(((a == b) && ...), file, line, msg) << a) << ... << b);
 	}
 }
@@ -895,10 +880,10 @@ namespace test {
 #define TEST_INTERNAL_ERROR_MSG_(EXPR) \
 	__FILE__ ":" TEST_INTERNAL_NTOS_(__LINE__) ": error: expected '" #EXPR "'\n"
 
-#define EXPECT(...) test::expect((__VA_ARGS__), __FILE__, __LINE__, TEST_INTERNAL_STR_((__VA_ARGS__)))
+#define EXPECT(...) tdd::expect((__VA_ARGS__), __FILE__, __LINE__, TEST_INTERNAL_STR_((__VA_ARGS__)))
 #define NEED(...) if (EXPECT(__VA_ARGS__)) return
 
-#define EQ(...) test::eq(__FILE__, __LINE__, TEST_INTERNAL_STR_((__VA_ARGS__)), __VA_ARGS__)
+#define EQ(...) tdd::eq(__FILE__, __LINE__, TEST_INTERNAL_STR_((__VA_ARGS__)), __VA_ARGS__)
 
 #define NE(A, B) EXPECT((A) != (B)) << (A) << (B)
 #define GE(A, B) EXPECT((A) >= (B)) << (A) << (B)
@@ -906,30 +891,30 @@ namespace test {
 #define LE(A, B) EXPECT((A) <= (B)) << (A) << (B)
 #define LT(A, B) EXPECT((A) <  (B)) << (A) << (B)
 
-#define DECL_TEST_(CONSTEXPR, CAT, NAME, PARAM, ...)                                                                                                 \
-	namespace test::_internal {                                                                                                                      \
-		template<class Access> struct test_## NAME ##_ {                                                                                             \
-			struct _test_internals_ { using access = Access; constexpr static category cat = CAT; };                                                 \
-			template<size_t... I> using prv_type = typename decltype(Access::template prv<I...>())::type;                                            \
-			template<size_t... I> constexpr static decltype(auto) prv()         { return Access::template prv<I...>(); }                             \
-			template<size_t... I> constexpr static decltype(auto) prv(auto&& o) { return Access::template prv<I...>(forward<decltype(o)>(o)); }      \
-			template<class, class...> CONSTEXPR static void body();                                                                                  \
-		};                                                                                                                                           \
-		template class define_test<test_## NAME ##_, PARAM __VA_OPT__(,) __VA_ARGS__>;                                                               \
-	}                                                                                                                                                \
-	template<class Access> template<class X, class... Xs>                                                                                            \
-	CONSTEXPR void test::_internal::test_## NAME ##_<Access>::body()
+#define DECL_TEST_(CONSTEXPR, CAT, NAME, PARAM, ...)                                                                                                                       \
+	namespace tdd {                                                                                                                                                        \
+		template<class Access> struct test_## NAME ##_ {                                                                                                                   \
+			struct _test_internals_ { using access = Access; constexpr static ::tdd::_internal_tdd::category cat = CAT; };                                                 \
+			template<size_t... I> using prv_type = typename decltype(Access::template prv<I...>())::type;                                                                  \
+			template<size_t... I> constexpr static decltype(auto) prv()         { return Access::template prv<I...>(); }                                                   \
+			template<size_t... I> constexpr static decltype(auto) prv(auto&& o) { return Access::template prv<I...>(::tdd::_internal_tdd::forward<decltype(o)>(o)); }      \
+			template<class, class...> CONSTEXPR static void body();                                                                                                        \
+		};                                                                                                                                                                 \
+		template class ::tdd::_internal_tdd::define_test<test_## NAME ##_, PARAM __VA_OPT__(,) __VA_ARGS__>;                                                               \
+	}                                                                                                                                                                      \
+	template<class Access> template<class X, class... Xs>                                                                                                                  \
+	CONSTEXPR void tdd::test_## NAME ##_<Access>::body()
 
 
-#define   TESTX(NAME, ...) DECL_TEST_(         , test::_internal::category::R,  NAME __VA_OPT__(,) __VA_ARGS__)
-#define  CTESTX(NAME, ...) DECL_TEST_(constexpr, test::_internal::category::C,  NAME __VA_OPT__(,) __VA_ARGS__)
-#define CRTESTX(NAME, ...) DECL_TEST_(constexpr, test::_internal::category::CR, NAME __VA_OPT__(,) __VA_ARGS__)
+#define   TESTX(NAME, ...) DECL_TEST_(         , ::tdd::_internal_tdd::category::R,  NAME __VA_OPT__(,) __VA_ARGS__)
+#define  CTESTX(NAME, ...) DECL_TEST_(constexpr, ::tdd::_internal_tdd::category::C,  NAME __VA_OPT__(,) __VA_ARGS__)
+#define CRTESTX(NAME, ...) DECL_TEST_(constexpr, ::tdd::_internal_tdd::category::CR, NAME __VA_OPT__(,) __VA_ARGS__)
 
 #define   TEST(NAME, ...)   TESTX(NAME, void __VA_OPT__(, ) __VA_ARGS__)
 #define  CTEST(NAME, ...)  CTESTX(NAME, void __VA_OPT__(, ) __VA_ARGS__)
 #define CRTEST(NAME, ...) CRTESTX(NAME, void __VA_OPT__(, ) __VA_ARGS__)
 
 #define RUN_ALL()                                                                      \
-	namespace test::_internal {                                                        \
+	namespace tdd::_internal_tdd {                                                     \
 		static exec<registry::tests::current_type<>> run_all_define_exec_object_{};    \
 	}
