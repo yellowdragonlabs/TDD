@@ -899,19 +899,17 @@ namespace tdd {
 #define LE(A, B) EXPECT((A) <= (B)) << (A) << (B)
 #define LT(A, B) EXPECT((A) <  (B)) << (A) << (B)
 
-#define DECL_TEST_(CONSTEXPR, CAT, NAME, PARAM, ...)                                                                                                                       \
-	namespace tdd {                                                                                                                                                        \
-		template<class Access> struct test_## NAME ##_ {                                                                                                                   \
-			struct _test_internals_ { using access = Access; constexpr static ::tdd::_internal_tdd::category cat = CAT; };                                                 \
-			template<size_t... I> using prv_type = typename decltype(Access::template prv<I...>())::type;                                                                  \
-			template<size_t... I> constexpr static decltype(auto) prv()         { return Access::template prv<I...>(); }                                                   \
-			template<size_t... I> constexpr static decltype(auto) prv(auto&& o) { return Access::template prv<I...>(::tdd::_internal_tdd::forward<decltype(o)>(o)); }      \
-			template<class, class...> CONSTEXPR static void body();                                                                                                        \
-		};                                                                                                                                                                 \
-		template class ::tdd::_internal_tdd::define_test<test_## NAME ##_, PARAM __VA_OPT__(,) __VA_ARGS__>;                                                               \
-	}                                                                                                                                                                      \
-	template<class Access> template<class X, class... Xs>                                                                                                                  \
-	CONSTEXPR void tdd::test_## NAME ##_<Access>::body()
+#define DECL_TEST_(CONSTEXPR, CAT, NAME, PARAM, ...)                                                                                                                   \
+	template<class Access> struct tdd_test_## NAME ##_ {                                                                                                               \
+		struct _test_internals_ { using access = Access; constexpr static ::tdd::_internal_tdd::category cat = CAT; };                                                 \
+		template<size_t... I> using prv_type = typename decltype(Access::template prv<I...>())::type;                                                                  \
+		template<size_t... I> constexpr static decltype(auto) prv()         { return Access::template prv<I...>(); }                                                   \
+		template<size_t... I> constexpr static decltype(auto) prv(auto&& o) { return Access::template prv<I...>(::tdd::_internal_tdd::forward<decltype(o)>(o)); }      \
+		template<class, class...> CONSTEXPR static void body();                                                                                                        \
+	};                                                                                                                                                                 \
+	template class ::tdd::_internal_tdd::define_test<tdd_test_## NAME ##_, PARAM __VA_OPT__(,) __VA_ARGS__>;                                                           \
+	template<class Access> template<class X, class... Xs>                                                                                                              \
+	CONSTEXPR void tdd_test_## NAME ##_<Access>::body()
 
 
 #define   TESTX(NAME, ...) DECL_TEST_(         , ::tdd::_internal_tdd::category::R,  NAME __VA_OPT__(,) __VA_ARGS__)
